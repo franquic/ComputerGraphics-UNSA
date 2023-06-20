@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/home/frank/Documents/unsa23/ComputacionGrafica/helloWorld/build",
-  "command": "/usr/bin/g++ -g -std=gnu++20 -o CMakeFiles/OpenGL_HelloWorld.dir/main.cpp.o -c /home/frank/Documents/unsa23/ComputacionGrafica/helloWorld/main.cpp",
-  "file": "/home/frank/Documents/unsa23/ComputacionGrafica/helloWorld/main.cpp"
-}
-]

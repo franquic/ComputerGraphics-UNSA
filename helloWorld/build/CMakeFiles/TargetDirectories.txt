@@ -1,3 +1,0 @@
-/home/frank/Documents/unsa23/ComputacionGrafica/helloWorld/build/CMakeFiles/OpenGL_HelloWorld.dir
-/home/frank/Documents/unsa23/ComputacionGrafica/helloWorld/build/CMakeFiles/edit_cache.dir
-/home/frank/Documents/unsa23/ComputacionGrafica/helloWorld/build/CMakeFiles/rebuild_cache.dir
