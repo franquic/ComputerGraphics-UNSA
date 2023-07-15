@@ -9,48 +9,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// Función para cargar un objeto en formato OBJ y extraer sus vértices
-bool loadObject(const std::string &filename, std::vector<glm::vec3> &vertices)
-{
-    std::ifstream objFile(filename);
-    if (!objFile.is_open())
-    {
-        std::cout << "Error al abrir el archivo: " << filename << std::endl;
-        return false;
-    }
-
-    std::vector<glm::vec3> objVertices;
-    std::string line;
-    while (std::getline(objFile, line))
-    {
-        std::istringstream iss(line);
-        std::string firstSymbol;
-        iss >> firstSymbol;
-
-        if (firstSymbol == "v")
-        {
-            glm::vec3 position;
-            iss >> position.x >> position.y >> position.z;
-            objVertices.push_back(position);
-        }
-        else if (firstSymbol == "f")
-        {
-            std::string vertexIndices;
-            for (int i = 0; i < 3; i++)
-            {
-                iss >> vertexIndices;
-                std::istringstream viss(vertexIndices);
-                unsigned int index;
-                viss >> index;
-                vertices.push_back(objVertices[index - 1]);
-            }
-        }
-    }
-
-    objFile.close();
-    return true;
-}
-
 int main()
 {
     GLFWwindow *window;
@@ -89,13 +47,6 @@ int main()
 
     // Configuración de OpenGL
     glClearColor(0.2, 0.2, 0.5, 0.0);
-
-    // std::vector<glm::vec3> vertices;
-    // if (!loadObject("Bunny.obj", vertices))
-    // {
-    //     glfwTerminate();
-    //     return -1;
-    // }
 
     std::vector<glm::vec3> pyramid =
         {
@@ -222,29 +173,31 @@ int main()
     int width, height;
     glfwGetFramebufferSize(window, &width, &height); // this is C
     float aspect = (float)width / (float)height;
-    glm::mat4 projMat = glm::perspective(glm::radians(90.0f), aspect, 0.1f, 100.0f);
+    glm::mat4 projMat = glm::perspective(glm::radians(90.0f), aspect, 0.1f, 1000.0f);
 
     GLuint projMatLoc = glGetUniformLocation(shaderProgram, "projMat");
     glUniformMatrix4fv(projMatLoc, 1, GL_FALSE, glm::value_ptr(projMat));
 
-    float angle = 0.0f;
+    float angleCam = 0.0f;
+    float angleCube = 0.0f;
+    float anglePyra = 0.0f;
     // Bucle principal de renderizado
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // Cam
+        auto viewMat = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f));
+        auto rotateMat = glm::rotate(glm::mat4(1.0f), angleCam, {0, 1, 0});
+        angleCam = (angleCam >= 2 * M_PI) ? 0 : angleCam + 0.01;
+        viewMat = viewMat * rotateMat;
+
         for (unsigned int i = 0; i < pyramid.size(); i++)
         {
             velocities[i] = velocities[i] + gravity * h;
-            pyramid[i] = pyramid[i] + gravity * t;
+            pyramid[i] = pyramid[i] + velocities[i] * t;
         }
         t += h;
-
-        // Cam
-        auto viewMat = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
-        auto rotateMat = glm::rotate(glm::mat4(1.0f), angle, {0, 0.5, 0});
-        angle = (angle >= 2 * M_PI) ? 0 : angle + 0.01;
-        viewMat = viewMat * rotateMat;
 
         // Pyramid
 
@@ -260,8 +213,11 @@ int main()
 
         // Cube
         auto modelMatCube = glm::translate(glm::mat4(1.0f), {-1.f, 1.f, -1.f});
-        mvMat = viewMat * modelMatCube;
-        mvMatLoc = glGetUniformLocation(shaderProgram, "mvMat");
+        rotateMat = glm::rotate(glm::mat4(1.0f), angleCube, {-1, 0, 0});
+        angleCube = (angleCube >= 2 * M_PI) ? 0 : angleCube + 0.05;
+        mvMat = viewMat * modelMatCube * rotateMat;
+        // mvMatLoc = glGetUniformLocation(shaderProgram, "mvMat");
+
         glUniformMatrix4fv(mvMatLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
 
         glBufferData(GL_ARRAY_BUFFER, 3 * cube.size() * sizeof(float), &cube[0], GL_STATIC_DRAW);
