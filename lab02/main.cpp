@@ -65,23 +65,27 @@ int main()
     }
 
     // Creación y configuración del Vertex Buffer Object (VBO)
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, bunnyVertices.size() * sizeof(glm::vec3), &bunnyVertices[0], GL_STATIC_DRAW);
+    GLuint vboBunny;
+    glGenBuffers(1, &vboBunny);
+    glBindBuffer(GL_ARRAY_BUFFER, vboBunny);
+    // glBufferData(GL_ARRAY_BUFFER, bunnyVertices.size() * sizeof(glm::vec3), &bunnyVertices[0], GL_STATIC_DRAW);
 
     // Creación y configuración del Vertex Buffer Object (VBO) para el dragon
     GLuint vboDragon;
     glGenBuffers(1, &vboDragon);
     glBindBuffer(GL_ARRAY_BUFFER, vboDragon);
-    glBufferData(GL_ARRAY_BUFFER, dragonVertices.size() * sizeof(glm::vec3), &dragonVertices[0], GL_STATIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, dragonVertices.size() * sizeof(glm::vec3), &dragonVertices[0], GL_STATIC_DRAW);
 
     // Creación y configuración del Vertex Array Object (VAO)
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), reinterpret_cast<void *>(0));
-    glEnableVertexAttribArray(0);
+    GLuint vaoBunny;
+    glGenVertexArrays(1, &vaoBunny);
+
+    GLuint vaoDragon;
+    glGenVertexArrays(1, &vaoDragon);
+
+    // glBindVertexArray(vao);
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), reinterpret_cast<void *>(0));
+    // glEnableVertexAttribArray(0);
 
     // Definición de los shaders de vértices y fragmentos
     const char *vertex_shader =
@@ -122,22 +126,30 @@ int main()
     float h = 0.0001f;
     float t = 0.0f;
 
-    std::vector<glm::vec3> velocities(bunnyVertices.size(), glm::vec3(0.0f));
+    std::vector<glm::vec3> velocities(bunnyVertices.size(), {0, 0, 0});
 
     // Perspective Matrix
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-    auto aspect = (float)width / (float)height;
-    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.f), aspect, .1f, 100.0f);
+    auto aspect = static_cast<float>(width) / static_cast<float>(height);
+    glm::mat4 projectionMatrix = glm::perspective(glm::radians(90.f), aspect, 0.1f, 1000.0f);
 
     GLuint projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix");
     glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
-    float angle = 0.0f;
+    float angleCam = 0.0f;
+    float angleDragon = 0.0f;
+
     // Bucle principal de renderizado
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // Cam
+        auto viewMatrix = glm::translate(glm::mat4(1), {0.f, 0.f, -1.f});
+        auto rotateMatrix = glm::rotate(glm::mat4(1), angleCam, {0, 1, 0});
+        angleCam = (angleCam >= 2 * 3.1415f) ? 0 : angleCam + 0.01;
+        viewMatrix *= rotateMatrix;
 
         for (unsigned int i = 0; i < velocities.size(); i++)
         {
@@ -146,33 +158,37 @@ int main()
         }
         t += h;
 
-        // Cam
-        auto viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.f, -5.0f));
-        auto rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 0.5f, 0.0f));
-        angle += 0.01f;
-        viewMatrix = viewMatrix * rotateMatrix;
-
         // dragon
-        auto modelMatrixObj1 = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-        auto mvMatrix = viewMatrix * modelMatrixObj1;
+        auto modelMatrixDragon = glm::translate(glm::mat4(1.0f), {0.f, 0.f, 0.f});
+        rotateMatrix = glm::rotate(glm::mat4(1.f), angleDragon, {1, 0, 0});
+        angleDragon = (angleDragon >= 2 * M_PI) ? 0 : angleDragon + 0.01f;
+        auto mvMatrix = viewMatrix * modelMatrixDragon * rotateMatrix;
+
         GLuint mvMatrixLocation = glGetUniformLocation(shaderProgram, "mvMatrix");
         glUniformMatrix4fv(mvMatrixLocation, 1, GL_FALSE, glm::value_ptr(mvMatrix));
 
+        glBindVertexArray(vaoDragon);
+        glBindBuffer(GL_ARRAY_BUFFER, vboDragon);
         glBufferData(GL_ARRAY_BUFFER, 3 * dragonVertices.size() * sizeof(float), &dragonVertices[0], GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glDrawArrays(GL_TRIANGLES, 0, dragonVertices.size() * 3);
+        glEnableVertexAttribArray(0);
+        glBindVertexArray(0);
 
         // bunny
-        auto modelMatrixObj2 = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 1.0f, 1.0f));
-        mvMatrix = viewMatrix * modelMatrixObj2;
-        mvMatrixLocation = glGetUniformLocation(shaderProgram, "mvMatrix");
+        auto modelMatrixBunny = glm::translate(glm::mat4(1.0f), {0.f, 0.5f, 0.f});
+        mvMatrix = viewMatrix * modelMatrixBunny;
+
+        // GLuint mvMatrixLocation = glGetUniformLocation(shaderProgram, "mvMatrix");
         glUniformMatrix4fv(mvMatrixLocation, 1, GL_FALSE, glm::value_ptr(mvMatrix));
 
+        glBindVertexArray(vaoBunny);
+        glBindBuffer(GL_ARRAY_BUFFER, vboBunny);
         glBufferData(GL_ARRAY_BUFFER, 3 * bunnyVertices.size() * sizeof(float), &bunnyVertices[0], GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glDrawArrays(GL_TRIANGLES, 0, bunnyVertices.size() * 3);
+        glEnableVertexAttribArray(0);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
