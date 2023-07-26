@@ -57,11 +57,24 @@ int main()
         return -1;
     }
 
+    // Scale OBJ
+    auto scale = glm::scale(glm::mat4(1), glm::vec3(40, 40, 40));
+    for (auto &v : bunnyVertices)
+    {
+        v = scale * glm::vec4(v, 1);
+    }
+
     std::vector<glm::vec3> dragonVertices;
     if (!loadObject("Dragon.obj", dragonVertices))
     {
         glfwTerminate();
         return -1;
+    }
+    // Scale OBJ
+    scale = glm::scale(glm::mat4(1), glm::vec3(40, 40, 40));
+    for (auto &v : dragonVertices)
+    {
+        v = scale * glm::vec4(v, 1);
     }
 
     // Creación y configuración del Vertex Buffer Object (VBO)
@@ -128,6 +141,8 @@ int main()
 
     std::vector<glm::vec3> velocities(bunnyVertices.size(), {0, 0, 0});
 
+    // Spring damper with static vertice
+
     // Perspective Matrix
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
@@ -146,7 +161,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Cam
-        auto viewMatrix = glm::translate(glm::mat4(1), {0.f, 0.f, -1.f});
+        auto viewMatrix = glm::translate(glm::mat4(1), {0.f, 0.f, -10.f});
         auto rotateMatrix = glm::rotate(glm::mat4(1), angleCam, {0, 1, 0});
         angleCam = (angleCam >= 2 * 3.1415f) ? 0 : angleCam + 0.01;
         viewMatrix *= rotateMatrix;
@@ -160,8 +175,8 @@ int main()
 
         // dragon
         auto modelMatrixDragon = glm::translate(glm::mat4(1.0f), {0.f, 0.f, 0.f});
-        rotateMatrix = glm::rotate(glm::mat4(1.f), angleDragon, {1, 0, 0});
-        angleDragon = (angleDragon >= 2 * M_PI) ? 0 : angleDragon + 0.01f;
+        rotateMatrix = glm::rotate(glm::mat4(1.f), angleDragon, {0, 1, 0});
+        angleDragon = (angleDragon >= 2 * M_PI) ? 0 : angleDragon + 0.05f;
         auto mvMatrix = viewMatrix * modelMatrixDragon * rotateMatrix;
 
         GLuint mvMatrixLocation = glGetUniformLocation(shaderProgram, "mvMatrix");
