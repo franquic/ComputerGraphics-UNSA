@@ -148,14 +148,12 @@ int main()
     glAttachShader(shaderProgramDragon, vs);
     glLinkProgram(shaderProgramDragon);
 
-    // Gravity Euler
+    // Gravity
     auto gravity = glm::vec3(0.0f, -0.98f, 0.0f);
     float h = 0.0001f;
     float t = 0.0f;
 
     std::vector<glm::vec3> velocities(bunnyVertices.size(), {0, 0, 0});
-
-    // Spring damper with static vertice
 
     // Perspective Matrix
     int width, height;
@@ -185,10 +183,24 @@ int main()
         angleCam = (angleCam >= 2 * 3.1415f) ? 0 : angleCam + 0.01;
         viewMatrix *= rotateMatrix;
 
-        for (unsigned int i = 0; i < velocities.size(); i++)
+        // for (unsigned int i = 0; i < velocities.size(); i++)
+        // {
+        //     velocities[i] += gravity * h;
+        //     bunnyVertices[i] += velocities[i] * t;
+        // }
+        // t += h;
+
+        // Gravity Runge-Kutta
+        for (unsigned i = 0; i < bunnyVertices.size(); ++i)
         {
-            velocities[i] += gravity * h;
-            bunnyVertices[i] += velocities[i] * t;
+            glm::vec3 acceleration = gravity;
+            glm::vec3 k1 = h * acceleration;
+            glm::vec3 k2 = h * (acceleration + k1 / 2.0f);
+            glm::vec3 k3 = h * (acceleration + k2 / 2.0f);
+            glm::vec3 k4 = h * (acceleration + k3);
+
+            velocities[i] = velocities[i] + k1 / 6.0f + k2 / 3.0f + k3 / 3.0f + k4 / 6.0f;
+            bunnyVertices[i] = bunnyVertices[i] + velocities[i] * t;
         }
         t += h;
 
